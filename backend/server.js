@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { PORT } = require('./src/config/env');
 const phoneRoutes = require('./src/routes/phone.routes');
+const userRoutes = require('./src/routes/user.routes');
 const errorHandler = require('./src/middlewares/error.middleware');
 
 const app = express();
@@ -18,6 +19,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/phones', phoneRoutes);
+app.use('/api/users', userRoutes);
 
 // Error Middleware
 app.use(errorHandler);

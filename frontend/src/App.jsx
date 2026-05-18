@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { phoneApi } from './services/phoneApi';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminUsersPage from './pages/AdminUsersPage';
 
 function App() {
+  // Navigation & Auth States
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState('login'); // 'login', 'register', 'dashboard', 'profile', 'admin'
   // States
   const [phones, setPhones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,13 +45,31 @@ function App() {
   };
 
   useEffect(() => {
+    // Check auth on load ONLY ONCE
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setCurrentUser(JSON.parse(savedUser));
+      setCurrentPage('dashboard');
+    }
+  }, []);
+
+  useEffect(() => {
     // Debounce search/filter
     const delayDebounce = setTimeout(() => {
-      fetchPhones({ search, brand: brandFilter });
+      if (currentUser) {
+        fetchPhones({ search, brand: brandFilter });
+      }
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [search, brandFilter]);
+  }, [search, brandFilter]); // removed currentUser from dependencies to avoid infinite re-renders
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    setCurrentPage('login');
+  };
 
   // Toast handler
   const showToast = (message, type = 'success') => {
@@ -188,6 +213,22 @@ function App() {
     }
   };
 
+  // ──────────────────────────────
+  // Render Auth Pages
+  // ──────────────────────────────
+  if (!currentUser) {
+    if (currentPage === 'register') {
+      return <RegisterPage onNavigateToLogin={() => setCurrentPage('login')} />;
+    }
+    return <LoginPage 
+      onLoginSuccess={(user) => { setCurrentUser(user); setCurrentPage('dashboard'); }} 
+      onNavigateToRegister={() => setCurrentPage('register')} 
+    />;
+  }
+
+  // ──────────────────────────────
+  // Render Authenticated App
+  // ──────────────────────────────
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -196,8 +237,15 @@ function App() {
           <div className="brand-icon">⚡</div>
           <span>NEO PHONES</span>
         </div>
+        
+        <div style={{padding: '1rem', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem', color: 'var(--text-muted)'}}>
+          <small>Xin chào,</small>
+          <div style={{fontWeight: 'bold', color: 'var(--text-color)'}}>{currentUser.fullName || currentUser.username}</div>
+          <span className={`role-badge ${currentUser.role.toLowerCase()}`} style={{fontSize: '0.7rem', padding: '2px 6px', display: 'inline-block', marginTop: '4px'}}>{currentUser.role}</span>
+        </div>
+
         <ul className="menu-list">
-          <li className="menu-item active">
+          <li className={`menu-item ${currentPage === 'dashboard' ? 'active' : ''}`} onClick={() => setCurrentPage('dashboard')}>
             <span style={{ fontSize: '1.25rem' }}>📊</span>
             <span>Quản Lý Sản Phẩm</span>
           </li>
@@ -205,17 +253,31 @@ function App() {
             <span style={{ fontSize: '1.25rem' }}>🛒</span>
             <span>Đơn Hàng</span>
           </li>
-          <li className="menu-item" onClick={() => showToast('Chức năng khách hàng đang phát triển', 'success')}>
-            <span style={{ fontSize: '1.25rem' }}>👥</span>
-            <span>Khách Hàng</span>
+          <li className={`menu-item ${currentPage === 'profile' ? 'active' : ''}`} onClick={() => setCurrentPage('profile')}>
+            <span style={{ fontSize: '1.25rem' }}>👤</span>
+            <span>Tài Khoản Của Tôi</span>
           </li>
+          {currentUser.role === 'ADMIN' && (
+            <li className={`menu-item ${currentPage === 'admin' ? 'active' : ''}`} onClick={() => setCurrentPage('admin')}>
+              <span style={{ fontSize: '1.25rem' }}>👥</span>
+              <span>Quản Lý Người Dùng</span>
+            </li>
+          )}
         </ul>
+
+        <div style={{marginTop: 'auto', padding: '1rem'}}>
+          <button className="btn-secondary" style={{width: '100%'}} onClick={handleLogout}>🚪 Đăng Xuất</button>
+        </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="main-content">
+        {currentPage === 'profile' && <ProfilePage />}
+        {currentPage === 'admin' && currentUser.role === 'ADMIN' && <AdminUsersPage />}
         
-        {/* Header */}
+        {currentPage === 'dashboard' && (
+          <>
+            {/* Header */}
         <header className="content-header">
           <div className="page-title">
             <h1>Hệ Thống Quản Lý Điện Thoại</h1>
@@ -357,6 +419,8 @@ function App() {
               );
             })}
           </section>
+        )}
+        </>
         )}
       </main>
 
