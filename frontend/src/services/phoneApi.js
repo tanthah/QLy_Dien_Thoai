@@ -1,5 +1,13 @@
 const API_URL = 'http://localhost:5000/api/phones';
 
+const getAdminHeaders = () => {
+  const token = sessionStorage.getItem('adminToken');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
 export const phoneApi = {
   /**
    * Get all phones with optional search and brand filters
@@ -41,9 +49,7 @@ export const phoneApi = {
   async createPhone(phoneData, images) {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAdminHeaders(),
       body: JSON.stringify({ ...phoneData, images }),
     });
     
@@ -63,9 +69,7 @@ export const phoneApi = {
   async updatePhone(id, phoneData, images) {
     const response = await fetch(`${API_URL}/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAdminHeaders(),
       body: JSON.stringify({ ...phoneData, images }),
     });
 
@@ -83,6 +87,7 @@ export const phoneApi = {
   async deletePhone(id) {
     const response = await fetch(`${API_URL}/${id}`, {
       method: 'DELETE',
+      headers: getAdminHeaders(),
     });
 
     const result = await response.json();

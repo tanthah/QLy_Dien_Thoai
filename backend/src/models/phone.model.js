@@ -7,11 +7,7 @@ class PhoneModel {
    * @param {Object} filters - { search, brand }
    */
   static async getAll(filters = {}) {
-    let query = `
-      SELECT p.*, GROUP_CONCAT(i.imageSource SEPARATOR ',') AS images 
-      FROM Product p 
-      LEFT JOIN Image i ON p.productID = i.productID
-    `;
+    let query = 'SELECT p.* FROM Product p';
     const queryParams = [];
     const conditions = [];
 
@@ -29,14 +25,29 @@ class PhoneModel {
       query += ` WHERE ` + conditions.join(' AND ');
     }
 
-    query += ` GROUP BY p.productID`;
-
     const [rows] = await db.query(query, queryParams);
+    if (rows.length === 0) return [];
+
+    const productIds = rows.map((row) => row.productID);
+    const [images] = await db.query(
+      `SELECT productID, imageSource
+       FROM Image
+       WHERE productID IN (?)
+       ORDER BY productID ASC, imagePosition ASC, imageID ASC`,
+      [productIds]
+    );
+
+    const imagesByProductId = images.reduce((map, image) => {
+      if (!map.has(image.productID)) {
+        map.set(image.productID, []);
+      }
+      map.get(image.productID).push(image.imageSource);
+      return map;
+    }, new Map());
     
-    // Map GROUP_CONCAT string to array of images
     return rows.map(row => ({
       ...row,
-      images: row.images ? row.images.split(',') : []
+      images: imagesByProductId.get(row.productID) || []
     }));
   }
 
@@ -48,7 +59,10 @@ class PhoneModel {
     const [products] = await db.query('SELECT * FROM Product WHERE productID = ?', [id]);
     if (products.length === 0) return null;
 
-    const [images] = await db.query('SELECT imageSource FROM Image WHERE productID = ?', [id]);
+    const [images] = await db.query(
+      'SELECT imageSource FROM Image WHERE productID = ? ORDER BY imagePosition ASC, imageID ASC',
+      [id]
+    );
     
     return {
       ...products[0],
@@ -82,12 +96,12 @@ class PhoneModel {
       );
 
       if (images && images.length > 0) {
-        for (const imgUrl of images) {
+        for (const [index, imgUrl] of images.entries()) {
           if (imgUrl && imgUrl.trim() !== '') {
             const imageID = crypto.randomUUID();
             await connection.query(
-              'INSERT INTO Image (imageID, productID, imageSource) VALUES (?, ?, ?)',
-              [imageID, productID, imgUrl.trim()]
+              'INSERT INTO Image (imageID, productID, imageSource, imagePosition) VALUES (?, ?, ?, ?)',
+              [imageID, productID, imgUrl.trim(), index]
             );
           }
         }
@@ -117,7 +131,7 @@ class PhoneModel {
       // Check if product exists first
       const [existing] = await connection.query('SELECT productID FROM Product WHERE productID = ?', [id]);
       if (existing.length === 0) {
-        connection.release();
+        await connection.rollback();
         return false;
       }
 
@@ -140,12 +154,12 @@ class PhoneModel {
 
       // Insert new images
       if (images && images.length > 0) {
-        for (const imgUrl of images) {
+        for (const [index, imgUrl] of images.entries()) {
           if (imgUrl && imgUrl.trim() !== '') {
             const imageID = crypto.randomUUID();
             await connection.query(
-              'INSERT INTO Image (imageID, productID, imageSource) VALUES (?, ?, ?)',
-              [imageID, id, imgUrl.trim()]
+              'INSERT INTO Image (imageID, productID, imageSource, imagePosition) VALUES (?, ?, ?, ?)',
+              [imageID, id, imgUrl.trim(), index]
             );
           }
         }

@@ -25,6 +25,11 @@
   padding: 0;
 }
 
+img {
+  display: block;
+  max-width: 100%;
+}
+
 body {
   background-color: var(--bg-primary);
   background-image: 
@@ -370,6 +375,7 @@ body {
   display: flex;
   flex-direction: column;
   position: relative;
+  min-width: 0;
 }
 
 .product-card:hover {
@@ -386,12 +392,14 @@ body {
   justify-content: center;
   overflow: hidden;
   position: relative;
+  flex: 0 0 200px;
 }
 
 .card-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 0.75rem;
   transition: var(--transition-smooth);
 }
 
@@ -683,6 +691,7 @@ textarea.form-control {
 .image-preview-card {
   width: 70px;
   height: 70px;
+  flex: 0 0 70px;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--border-color);
@@ -693,7 +702,8 @@ textarea.form-control {
 .image-preview-card img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 0.25rem;
 }
 
 .remove-img-url-btn {

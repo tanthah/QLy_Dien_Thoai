@@ -13,6 +13,20 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
+const ensureImagePositionColumn = async () => {
+  const [columns] = await pool.query(
+    `SELECT COLUMN_NAME
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'Image' AND COLUMN_NAME = 'imagePosition'`,
+    [DB.database]
+  );
+
+  if (columns.length === 0) {
+    await pool.query('ALTER TABLE Image ADD COLUMN imagePosition INT NOT NULL DEFAULT 0 AFTER imageSource');
+    console.log('Added Image.imagePosition column for ordered product images.');
+  }
+};
+
 // Setup and auto-initialize database schema on startup
 const setupTables = async () => {
   try {
@@ -60,6 +74,8 @@ const setupTables = async () => {
     } else {
       console.log('Database and tables already exist. Skipping schema initialization.');
     }
+
+    await ensureImagePositionColumn();
   } catch (err) {
     console.error('Error during database auto-initialization:', err.message);
   }

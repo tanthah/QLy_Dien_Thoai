@@ -1,5 +1,22 @@
 const API_URL = 'http://localhost:5000/api/users';
 
+const cleanText = (value = '') => (typeof value === 'string' ? value : '').trim();
+const normalizePhoneNumber = (phoneNumber = '') => cleanText(phoneNumber).replace(/[\s.-]/g, '');
+
+const normalizeAuthData = (data = {}) => ({
+  username: cleanText(data.username),
+  password: cleanText(data.password),
+  fullName: cleanText(data.fullName),
+  email: cleanText(data.email).toLowerCase(),
+  phoneNumber: normalizePhoneNumber(data.phoneNumber)
+});
+
+const normalizeProfileData = (data = {}) => ({
+  fullName: cleanText(data.fullName),
+  email: cleanText(data.email).toLowerCase(),
+  phoneNumber: normalizePhoneNumber(data.phoneNumber)
+});
+
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
   return {
@@ -14,7 +31,7 @@ export const userApi = {
     const response = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(normalizeAuthData(data)),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Lỗi đăng ký');
@@ -25,7 +42,7 @@ export const userApi = {
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username: cleanText(username), password: cleanText(password) }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Lỗi đăng nhập');
@@ -56,7 +73,7 @@ export const userApi = {
     const response = await fetch(`${API_URL}/me`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(normalizeProfileData(data)),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Lỗi cập nhật thông tin');
@@ -67,7 +84,7 @@ export const userApi = {
     const response = await fetch(`${API_URL}/me/password`, {
       method: 'PUT',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ oldPassword, newPassword }),
+      body: JSON.stringify({ oldPassword: cleanText(oldPassword), newPassword: cleanText(newPassword) }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || 'Lỗi đổi mật khẩu');

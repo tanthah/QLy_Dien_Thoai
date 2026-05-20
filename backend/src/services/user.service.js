@@ -1,24 +1,72 @@
-const crypto = require('crypto');
 const UserModel = require('../models/user.model');
 const AddressModel = require('../models/address.model');
+const { createSaltedHash, verifyPassword } = require('../utils/password');
 
-// ───────────────────────────────────────────────
-//  Utility: hash password với SHA-256 + salt
-// ───────────────────────────────────────────────
-const hashPassword = (password, salt) => {
-  return crypto.createHmac('sha256', salt).update(password).digest('hex');
+const USERNAME_PATTERN = /^[A-Za-z0-9_]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[0-9]{9,15}$/;
+
+const createValidationError = (message) => {
+  const err = new Error(message);
+  err.statusCode = 400;
+  return err;
 };
 
-const createSaltedHash = (password) => {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = hashPassword(password, salt);
-  return `${salt}:${hash}`;
+const requiredString = (value, fieldName) => {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw createValidationError(`${fieldName} không được để trống`);
+  }
+  return value.trim();
 };
 
-const verifyPassword = (password, storedHash) => {
-  const [salt, hash] = storedHash.split(':');
-  const inputHash = hashPassword(password, salt);
-  return inputHash === hash;
+const normalizePhoneNumber = (phoneNumber) => {
+  return phoneNumber.replace(/[\s.-]/g, '');
+};
+
+const validateUsername = (value) => {
+  const username = requiredString(value, 'Tên đăng nhập');
+  if (username.length < 3 || username.length > 50) {
+    throw createValidationError('Tên đăng nhập phải có từ 3 đến 50 ký tự');
+  }
+  if (!USERNAME_PATTERN.test(username)) {
+    throw createValidationError('Tên đăng nhập chỉ được gồm chữ, số và dấu gạch dưới');
+  }
+  return username;
+};
+
+const validatePassword = (value, fieldName = 'Mật khẩu') => {
+  const password = requiredString(value, fieldName);
+  if (password.length < 6) {
+    throw createValidationError(`${fieldName} phải có ít nhất 6 ký tự`);
+  }
+  if (password.length > 128) {
+    throw createValidationError(`${fieldName} không được vượt quá 128 ký tự`);
+  }
+  return password;
+};
+
+const validateFullName = (value) => {
+  const fullName = requiredString(value, 'Họ và tên');
+  if (fullName.length > 100) {
+    throw createValidationError('Họ và tên không được vượt quá 100 ký tự');
+  }
+  return fullName;
+};
+
+const validateEmail = (value) => {
+  const email = requiredString(value, 'Email').toLowerCase();
+  if (email.length > 100 || !EMAIL_PATTERN.test(email)) {
+    throw createValidationError('Email không hợp lệ');
+  }
+  return email;
+};
+
+const validatePhoneNumber = (value) => {
+  const phoneNumber = normalizePhoneNumber(requiredString(value, 'Số điện thoại'));
+  if (!PHONE_PATTERN.test(phoneNumber)) {
+    throw createValidationError('Số điện thoại phải gồm 9 đến 15 chữ số');
+  }
+  return phoneNumber;
 };
 
 // ───────────────────────────────────────────────
@@ -41,22 +89,16 @@ class UserService {
   /**
    * Đăng ký tài khoản mới (role mặc định: CUSTOMER)
    */
-  static async register(data) {
+  static async register(data = {}) {
     const { username, password, fullName, email, phoneNumber } = data;
-
-    if (!username || username.trim().length < 3) {
-      const err = new Error('Tên đăng nhập phải có ít nhất 3 ký tự');
-      err.statusCode = 400;
-      throw err;
-    }
-    if (!password || password.length < 6) {
-      const err = new Error('Mật khẩu phải có ít nhất 6 ký tự');
-      err.statusCode = 400;
-      throw err;
-    }
+    const safeUsername = validateUsername(username);
+    const safePassword = validatePassword(password);
+    const safeFullName = validateFullName(fullName);
+    const safeEmail = validateEmail(email);
+    const safePhoneNumber = validatePhoneNumber(phoneNumber);
 
     // Kiểm tra username đã tồn tại
-    const existing = await UserModel.findByUsername(username.trim());
+    const existing = await UserModel.findByUsername(safeUsername);
     if (existing) {
       const err = new Error('Tên đăng nhập đã tồn tại, vui lòng chọn tên khác');
       err.statusCode = 409;
@@ -64,49 +106,42 @@ class UserService {
     }
 
     // Kiểm tra email đã tồn tại
-    if (email && email.trim()) {
-      const emailUsed = await UserModel.findByEmail(email.trim());
-      if (emailUsed) {
-        const err = new Error('Email này đã được sử dụng cho tài khoản khác');
-        err.statusCode = 409;
-        throw err;
-      }
+    const emailUsed = await UserModel.findByEmail(safeEmail);
+    if (emailUsed) {
+      const err = new Error('Email này đã được sử dụng cho tài khoản khác');
+      err.statusCode = 409;
+      throw err;
     }
 
-    const hashedPassword = createSaltedHash(password);
-    // Tài khoản có username là 'admin' mặc định được cấp quyền ADMIN
-    const assignedRole = username.trim() === 'admin' ? 'ADMIN' : 'CUSTOMER';
+    const hashedPassword = createSaltedHash(safePassword);
 
     const userID = await UserModel.create({
-      username: username.trim(),
+      username: safeUsername,
       password: hashedPassword,
-      fullName: fullName ? fullName.trim() : null,
-      email: email ? email.trim() : null,
-      phoneNumber: phoneNumber ? phoneNumber.trim() : null,
-      role: assignedRole
+      fullName: safeFullName,
+      email: safeEmail,
+      phoneNumber: safePhoneNumber,
+      role: 'CUSTOMER'
     });
 
-    return { userID, username: username.trim() };
+    return { userID, username: safeUsername };
   }
 
   /**
    * Đăng nhập — trả về token + thông tin user
    */
   static async login(username, password) {
-    if (!username || !password) {
-      const err = new Error('Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu');
-      err.statusCode = 400;
-      throw err;
-    }
+    const safeUsername = requiredString(username, 'Tên đăng nhập');
+    const safePassword = requiredString(password, 'Mật khẩu');
 
-    const user = await UserModel.findByUsername(username.trim());
+    const user = await UserModel.findByUsername(safeUsername);
     if (!user) {
       const err = new Error('Tên đăng nhập hoặc mật khẩu không đúng');
       err.statusCode = 401;
       throw err;
     }
 
-    const isValid = verifyPassword(password, user.password);
+    const isValid = verifyPassword(safePassword, user.password);
     if (!isValid) {
       const err = new Error('Tên đăng nhập hoặc mật khẩu không đúng');
       err.statusCode = 401;
@@ -141,39 +176,32 @@ class UserService {
     return user;
   }
 
-  static async updateProfile(userID, data) {
+  static async updateProfile(userID, data = {}) {
     const { fullName, email, phoneNumber } = data;
+    const safeFullName = validateFullName(fullName);
+    const safeEmail = validateEmail(email);
+    const safePhoneNumber = validatePhoneNumber(phoneNumber);
 
     // Kiểm tra email có bị trùng với user khác không
-    if (email && email.trim()) {
-      const emailUsed = await UserModel.findByEmail(email.trim());
-      if (emailUsed && emailUsed.userID !== userID) {
-        const err = new Error('Email này đã được sử dụng cho tài khoản khác');
-        err.statusCode = 409;
-        throw err;
-      }
+    const emailUsed = await UserModel.findByEmail(safeEmail);
+    if (emailUsed && emailUsed.userID !== userID) {
+      const err = new Error('Email này đã được sử dụng cho tài khoản khác');
+      err.statusCode = 409;
+      throw err;
     }
 
     await UserModel.updateProfile(userID, {
-      fullName: fullName ? fullName.trim() : null,
-      email: email ? email.trim() : null,
-      phoneNumber: phoneNumber ? phoneNumber.trim() : null
+      fullName: safeFullName,
+      email: safeEmail,
+      phoneNumber: safePhoneNumber
     });
 
     return await UserModel.findById(userID);
   }
 
   static async changePassword(userID, oldPassword, newPassword) {
-    if (!oldPassword || !newPassword) {
-      const err = new Error('Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới');
-      err.statusCode = 400;
-      throw err;
-    }
-    if (newPassword.length < 6) {
-      const err = new Error('Mật khẩu mới phải có ít nhất 6 ký tự');
-      err.statusCode = 400;
-      throw err;
-    }
+    const safeOldPassword = requiredString(oldPassword, 'Mật khẩu cũ');
+    const safeNewPassword = validatePassword(newPassword, 'Mật khẩu mới');
 
     // Lấy user với password (findByUsername cần userId)
     const [rows] = await require('../config/db').query(
@@ -184,14 +212,14 @@ class UserService {
       const err = new Error('Người dùng không tồn tại'); err.statusCode = 404; throw err;
     }
 
-    const isValid = verifyPassword(oldPassword, user.password);
+    const isValid = verifyPassword(safeOldPassword, user.password);
     if (!isValid) {
       const err = new Error('Mật khẩu cũ không đúng');
       err.statusCode = 400;
       throw err;
     }
 
-    const newHashed = createSaltedHash(newPassword);
+    const newHashed = createSaltedHash(safeNewPassword);
     await UserModel.updatePassword(userID, newHashed);
   }
 

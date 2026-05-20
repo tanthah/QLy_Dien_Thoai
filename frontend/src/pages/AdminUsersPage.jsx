@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { userApi } from '../services/userApi';
+import { useCallback, useEffect, useState } from 'react';
+import { adminApi } from '../services/adminApi';
 import './AdminUsersPage.css';
 
 function AdminUsersPage() {
@@ -7,26 +7,30 @@ function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const showToast = (msg, type = 'success') => {
+  const showToast = useCallback((msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await userApi.getAllUsers();
+      const data = await adminApi.getAllUsers();
       setUsers(data);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      loadUsers();
+    }, 0);
+
+    return () => clearTimeout(timerId);
+  }, [loadUsers]);
 
   const handleDelete = async (id, role) => {
     if (role === 'ADMIN') {
@@ -36,7 +40,7 @@ function AdminUsersPage() {
     }
 
     try {
-      await userApi.deleteUser(id);
+      await adminApi.deleteUser(id);
       showToast('Xóa người dùng thành công!');
       loadUsers();
     } catch (err) {

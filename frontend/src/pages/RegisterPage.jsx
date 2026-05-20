@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { userApi } from '../services/userApi';
 import './LoginPage.css';
+
+const USERNAME_PATTERN = /^[A-Za-z0-9_]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[0-9]{9,15}$/;
+
+const normalizePhoneNumber = (phoneNumber) => phoneNumber.trim().replace(/[\s.-]/g, '');
 
 function RegisterPage({ onNavigateToLogin }) {
   const [formData, setFormData] = useState({
@@ -22,15 +28,42 @@ function RegisterPage({ onNavigateToLogin }) {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
+    const safeData = {
+      username: formData.username.trim(),
+      password: formData.password.trim(),
+      fullName: formData.fullName.trim(),
+      email: formData.email.trim().toLowerCase(),
+      phoneNumber: normalizePhoneNumber(formData.phoneNumber)
+    };
     
-    if (!formData.username.trim() || !formData.password) {
-      setError('Tên đăng nhập và mật khẩu là bắt buộc');
+    if (!safeData.username || !safeData.password || !safeData.fullName || !safeData.email || !safeData.phoneNumber) {
+      setError('Vui lòng nhập đầy đủ tất cả thông tin');
+      return;
+    }
+    if (safeData.username.length < 3 || safeData.username.length > 50 || !USERNAME_PATTERN.test(safeData.username)) {
+      setError('Tên đăng nhập phải có 3-50 ký tự và chỉ gồm chữ, số, dấu gạch dưới');
+      return;
+    }
+    if (safeData.password.length < 6 || safeData.password.length > 128) {
+      setError('Mật khẩu phải có từ 6 đến 128 ký tự');
+      return;
+    }
+    if (safeData.fullName.length > 100) {
+      setError('Họ và tên không được vượt quá 100 ký tự');
+      return;
+    }
+    if (safeData.email.length > 100 || !EMAIL_PATTERN.test(safeData.email)) {
+      setError('Email không hợp lệ');
+      return;
+    }
+    if (!PHONE_PATTERN.test(safeData.phoneNumber)) {
+      setError('Số điện thoại phải gồm 9 đến 15 chữ số');
       return;
     }
 
     try {
       setLoading(true);
-      await userApi.register(formData);
+      await userApi.register(safeData);
       setSuccessMsg('Đăng ký thành công! Đang chuyển hướng...');
       setTimeout(() => {
         onNavigateToLogin();
@@ -61,6 +94,11 @@ function RegisterPage({ onNavigateToLogin }) {
               type="text" name="username"
               value={formData.username} onChange={handleChange}
               placeholder="Ít nhất 3 ký tự" className="form-control"
+              required
+              minLength={3}
+              maxLength={50}
+              pattern="[A-Za-z0-9_]+"
+              autoComplete="username"
             />
           </div>
           <div className="form-group">
@@ -69,30 +107,45 @@ function RegisterPage({ onNavigateToLogin }) {
               type="password" name="password"
               value={formData.password} onChange={handleChange}
               placeholder="Ít nhất 6 ký tự" className="form-control"
+              required
+              minLength={6}
+              maxLength={128}
+              autoComplete="new-password"
             />
           </div>
           <div className="form-group">
-            <label>Họ và Tên</label>
+            <label>Họ và Tên *</label>
             <input 
               type="text" name="fullName"
               value={formData.fullName} onChange={handleChange}
               className="form-control"
+              required
+              maxLength={100}
+              autoComplete="name"
             />
           </div>
           <div className="form-group">
-            <label>Email</label>
+            <label>Email *</label>
             <input 
               type="email" name="email"
               value={formData.email} onChange={handleChange}
               className="form-control"
+              required
+              maxLength={100}
+              autoComplete="email"
             />
           </div>
           <div className="form-group">
-            <label>Số điện thoại</label>
+            <label>Số điện thoại *</label>
             <input 
               type="text" name="phoneNumber"
               value={formData.phoneNumber} onChange={handleChange}
               className="form-control"
+              required
+              inputMode="numeric"
+              pattern="[0-9]{9,15}"
+              maxLength={15}
+              autoComplete="tel"
             />
           </div>
           <button type="submit" className="btn-primary auth-submit" disabled={loading}>

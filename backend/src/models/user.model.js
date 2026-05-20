@@ -14,6 +14,14 @@ class UserModel {
     return rows[0] || null;
   }
 
+  static async findFirstByRole(role) {
+    const [rows] = await db.query(
+      'SELECT * FROM User WHERE role = ? ORDER BY username ASC LIMIT 1',
+      [role]
+    );
+    return rows[0] || null;
+  }
+
   /**
    * Tìm user theo userID
    * @param {string} userID

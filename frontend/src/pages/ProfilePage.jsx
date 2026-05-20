@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { userApi } from '../services/userApi';
 import './ProfilePage.css';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[0-9]{9,15}$/;
+
+const normalizePhoneNumber = (phoneNumber) => phoneNumber.trim().replace(/[\s.-]/g, '');
 
 function ProfilePage() {
   const [activeTab, setActiveTab] = useState('info');
@@ -13,17 +18,12 @@ function ProfilePage() {
   
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    loadProfile();
-    loadAddresses();
-  }, []);
-
-  const showToast = (msg, type = 'success') => {
+  const showToast = useCallback((msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
-  };
+  }, []);
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       const data = await userApi.getProfile();
       setProfile(data);
@@ -35,21 +35,53 @@ function ProfilePage() {
     } catch (err) {
       showToast(err.message, 'error');
     }
-  };
+  }, [showToast]);
 
-  const loadAddresses = async () => {
+  const loadAddresses = useCallback(async () => {
     try {
       const data = await userApi.getAddresses();
       setAddresses(data);
     } catch (err) {
       showToast(err.message, 'error');
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      loadProfile();
+      loadAddresses();
+    }, 0);
+
+    return () => clearTimeout(timerId);
+  }, [loadAddresses, loadProfile]);
 
   const handleUpdateInfo = async (e) => {
     e.preventDefault();
+    const safeInfo = {
+      fullName: infoForm.fullName.trim(),
+      email: infoForm.email.trim().toLowerCase(),
+      phoneNumber: normalizePhoneNumber(infoForm.phoneNumber)
+    };
+
+    if (!safeInfo.fullName || !safeInfo.email || !safeInfo.phoneNumber) {
+      showToast('Vui lòng nhập đầy đủ họ tên, email và số điện thoại', 'error');
+      return;
+    }
+    if (safeInfo.fullName.length > 100) {
+      showToast('Họ và tên không được vượt quá 100 ký tự', 'error');
+      return;
+    }
+    if (safeInfo.email.length > 100 || !EMAIL_PATTERN.test(safeInfo.email)) {
+      showToast('Email không hợp lệ', 'error');
+      return;
+    }
+    if (!PHONE_PATTERN.test(safeInfo.phoneNumber)) {
+      showToast('Số điện thoại phải gồm 9 đến 15 chữ số', 'error');
+      return;
+    }
+
     try {
-      await userApi.updateProfile(infoForm);
+      await userApi.updateProfile(safeInfo);
       showToast('Cập nhật thông tin thành công!');
       loadProfile();
     } catch (err) {
@@ -59,8 +91,20 @@ function ProfilePage() {
 
   const handleChangePwd = async (e) => {
     e.preventDefault();
+    const oldPassword = pwdForm.oldPassword.trim();
+    const newPassword = pwdForm.newPassword.trim();
+
+    if (!oldPassword || !newPassword) {
+      showToast('Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới', 'error');
+      return;
+    }
+    if (newPassword.length < 6 || newPassword.length > 128) {
+      showToast('Mật khẩu mới phải có từ 6 đến 128 ký tự', 'error');
+      return;
+    }
+
     try {
-      await userApi.changePassword(pwdForm.oldPassword, pwdForm.newPassword);
+      await userApi.changePassword(oldPassword, newPassword);
       showToast('Đổi mật khẩu thành công!');
       setPwdForm({ oldPassword: '', newPassword: '' });
     } catch (err) {
@@ -120,15 +164,15 @@ function ProfilePage() {
               </div>
               <div className="form-group">
                 <label>Họ và tên</label>
-                <input type="text" className="form-control" value={infoForm.fullName} onChange={e => setInfoForm({...infoForm, fullName: e.target.value})} />
+                <input type="text" required maxLength={100} autoComplete="name" className="form-control" value={infoForm.fullName} onChange={e => setInfoForm({...infoForm, fullName: e.target.value})} />
               </div>
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" className="form-control" value={infoForm.email} onChange={e => setInfoForm({...infoForm, email: e.target.value})} />
+                <input type="email" required maxLength={100} autoComplete="email" className="form-control" value={infoForm.email} onChange={e => setInfoForm({...infoForm, email: e.target.value})} />
               </div>
               <div className="form-group">
                 <label>Số điện thoại</label>
-                <input type="text" className="form-control" value={infoForm.phoneNumber} onChange={e => setInfoForm({...infoForm, phoneNumber: e.target.value})} />
+                <input type="text" required inputMode="numeric" pattern="[0-9]{9,15}" maxLength={15} autoComplete="tel" className="form-control" value={infoForm.phoneNumber} onChange={e => setInfoForm({...infoForm, phoneNumber: e.target.value})} />
               </div>
               <button type="submit" className="btn-primary">Lưu Thay Đổi</button>
             </form>
@@ -139,11 +183,11 @@ function ProfilePage() {
               <h3>Đổi Mật Khẩu</h3>
               <div className="form-group">
                 <label>Mật khẩu cũ</label>
-                <input type="password" required className="form-control" value={pwdForm.oldPassword} onChange={e => setPwdForm({...pwdForm, oldPassword: e.target.value})} />
+                <input type="password" required autoComplete="current-password" className="form-control" value={pwdForm.oldPassword} onChange={e => setPwdForm({...pwdForm, oldPassword: e.target.value})} />
               </div>
               <div className="form-group">
                 <label>Mật khẩu mới</label>
-                <input type="password" required className="form-control" value={pwdForm.newPassword} onChange={e => setPwdForm({...pwdForm, newPassword: e.target.value})} />
+                <input type="password" required minLength={6} maxLength={128} autoComplete="new-password" className="form-control" value={pwdForm.newPassword} onChange={e => setPwdForm({...pwdForm, newPassword: e.target.value})} />
               </div>
               <button type="submit" className="btn-primary">Xác Nhận Đổi</button>
             </form>

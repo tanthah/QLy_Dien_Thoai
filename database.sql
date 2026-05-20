@@ -7,9 +7,9 @@ CREATE TABLE User (
     userID VARCHAR(50) PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    fullName VARCHAR(100),
-    email VARCHAR(100) UNIQUE,
-    phoneNumber VARCHAR(15),
+    fullName VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phoneNumber VARCHAR(15) NOT NULL,
     role ENUM('CUSTOMER', 'ADMIN') NOT NULL
 );
 
@@ -39,6 +39,7 @@ CREATE TABLE Image (
     imageID VARCHAR(50) PRIMARY KEY,
     productID VARCHAR(50),
     imageSource VARCHAR(255),
+    imagePosition INT NOT NULL DEFAULT 0,
     FOREIGN KEY (productID) REFERENCES Product(productID) ON DELETE CASCADE
 );
 
