@@ -5,6 +5,7 @@ const crypto = require('crypto');
 async function seed() {
   const connection = await mysql.createConnection({
     host: DB.host,
+    port: DB.port,
     user: DB.user,
     password: DB.password,
     database: DB.database,

@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:5000/api/users';
+import { API_BASE_URL } from './apiConfig';
+const API_URL = `${API_BASE_URL}/api/users`;
 
 const getAdminHeaders = () => {
   const token = sessionStorage.getItem('adminToken');

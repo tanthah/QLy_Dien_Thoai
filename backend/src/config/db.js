@@ -5,6 +5,7 @@ const { DB } = require('./env');
 
 const pool = mysql.createPool({
   host: DB.host,
+  port: DB.port,
   user: DB.user,
   password: DB.password,
   database: DB.database,
@@ -36,6 +37,7 @@ const setupTables = async () => {
     try {
       const tempConn = await mysql.createConnection({
         host: DB.host,
+        port: DB.port,
         user: DB.user,
         password: DB.password,
         database: DB.database
@@ -55,6 +57,7 @@ const setupTables = async () => {
       // Connect to MySQL server without database first (multipleStatements enabled to run the whole file)
       const connection = await mysql.createConnection({
         host: DB.host,
+        port: DB.port,
         user: DB.user,
         password: DB.password,
         multipleStatements: true
