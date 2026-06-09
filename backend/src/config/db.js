@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const { DB } = require('./env');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const pool = mysql.createPool({
   host: DB.host,
   port: DB.port,
@@ -11,7 +13,10 @@ const pool = mysql.createPool({
   database: DB.database,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ...(isProduction && {
+    ssl: { rejectUnauthorized: false }
+  })
 });
 
 const ensureImagePositionColumn = async () => {
@@ -40,7 +45,10 @@ const setupTables = async () => {
         port: DB.port,
         user: DB.user,
         password: DB.password,
-        database: DB.database
+        database: DB.database,
+        ...(isProduction && {
+          ssl: { rejectUnauthorized: false }
+        })
       });
       await tempConn.query('SELECT 1 FROM Product LIMIT 1');
       await tempConn.end();
@@ -60,7 +68,11 @@ const setupTables = async () => {
         port: DB.port,
         user: DB.user,
         password: DB.password,
-        multipleStatements: true
+        database: DB.database,
+        multipleStatements: true,
+        ...(isProduction && {
+          ssl: { rejectUnauthorized: false }
+        })
       });
       
       const sqlPath = path.join(__dirname, '../../../database.sql');

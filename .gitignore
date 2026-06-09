@@ -12,6 +12,7 @@ web_modules/
 .env.production.local
 **/.env
 **/.env.*
+!**/.env.render
 
 # Build outputs (Vite/React)
 dist/
