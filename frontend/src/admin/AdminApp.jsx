@@ -5,6 +5,7 @@ import Toast from '../components/Toast';
 import { useAdminSession } from '../hooks/useAdminSession';
 import { usePhoneDashboard } from '../hooks/usePhoneDashboard';
 import { useToast } from '../hooks/useToast';
+import AdminOrdersPage from '../pages/AdminOrdersPage';
 import AdminUsersPage from '../pages/AdminUsersPage';
 import DashboardPage from '../pages/DashboardPage';
 import LoginPage from '../pages/LoginPage';
@@ -33,6 +34,12 @@ function AdminApp() {
     );
   }
 
+  const renderPage = () => {
+    if (currentPage === 'admin')  return <AdminUsersPage />;
+    if (currentPage === 'orders') return <AdminOrdersPage />;
+    return <DashboardPage {...phoneDashboard.dashboardProps} />;
+  };
+
   return (
     <AppLayout
       currentUser={adminUser}
@@ -50,13 +57,10 @@ function AdminApp() {
         </>
       }
     >
-      {currentPage === 'admin' ? (
-        <AdminUsersPage />
-      ) : (
-        <DashboardPage {...phoneDashboard.dashboardProps} />
-      )}
+      {renderPage()}
     </AppLayout>
   );
 }
 
 export default AdminApp;
+

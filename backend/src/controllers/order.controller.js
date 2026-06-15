@@ -33,6 +33,31 @@ class OrderController {
       next(err);
     }
   }
+
+  // ── Admin handlers ──────────────────────────────────────
+
+  static async getAllOrders(req, res, next) {
+    try {
+      const orders = await OrderService.getAllOrders();
+      return response.success(res, 'Lấy tất cả đơn hàng thành công', orders);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  static async updateOrderStatus(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      if (!status) {
+        return response.error(res, 'Thiếu trạng thái mới', 400);
+      }
+      await OrderService.updateOrderStatus(id, status);
+      return response.success(res, 'Cập nhật trạng thái đơn hàng thành công');
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = OrderController;

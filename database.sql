@@ -1,6 +1,6 @@
+-- Aiven: database 'defaultdb' is selected via connection config
+-- Tables will be created directly in defaultdb
 
-CREATE DATABASE IF NOT EXISTS PhoneStoreDB;
-USE PhoneStoreDB;
 
 -- 2. Bảng User
 CREATE TABLE User (

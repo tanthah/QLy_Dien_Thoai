@@ -94,6 +94,7 @@ const findEmailOwner = async (connection, email) => {
 const upsertAdmin = async ({ username, password, fullName, email, phoneNumber }) => {
   const connection = await mysql.createConnection({
     host: DB.host,
+    port: DB.port,
     user: DB.user,
     password: DB.password,
     database: DB.database,

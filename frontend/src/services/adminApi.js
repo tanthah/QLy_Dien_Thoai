@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:5000/api/users';
+import { API_BASE_URL } from './apiConfig';
+const API_URL = `${API_BASE_URL}/api/users`;
+const ORDERS_URL = `${API_BASE_URL}/api/orders`;
 
 const getAdminHeaders = () => {
   const token = sessionStorage.getItem('adminToken');
@@ -61,5 +63,21 @@ export const adminApi = {
       headers: getAdminHeaders(),
     });
     return readApiResult(response, 'Lỗi xóa user');
+  },
+
+  async getAllOrders() {
+    const response = await fetch(`${ORDERS_URL}`, {
+      headers: getAdminHeaders(),
+    });
+    return readApiResult(response, 'Lỗi lấy danh sách đơn hàng');
+  },
+
+  async updateOrderStatus(orderID, status) {
+    const response = await fetch(`${ORDERS_URL}/${orderID}/status`, {
+      method: 'PUT',
+      headers: getAdminHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    return readApiResult(response, 'Lỗi cập nhật trạng thái đơn hàng');
   },
 };

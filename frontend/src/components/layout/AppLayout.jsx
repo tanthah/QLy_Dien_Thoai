@@ -77,6 +77,15 @@ function AppLayout({
           )}
           {currentUser.role === 'ADMIN' && (
             <li
+              className={`menu-item ${currentPage === 'orders' ? 'active' : ''}`}
+              onClick={() => onNavigate('orders')}
+            >
+              <span style={sidebarIconStyle}>📦</span>
+              <span>Quản Lý Đơn Hàng</span>
+            </li>
+          )}
+          {currentUser.role === 'ADMIN' && (
+            <li
               className={`menu-item ${currentPage === 'admin' ? 'active' : ''}`}
               onClick={() => onNavigate('admin')}
             >

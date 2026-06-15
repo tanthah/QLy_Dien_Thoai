@@ -4,10 +4,12 @@
   --bg-primary: #0a0c16;
   --bg-secondary: rgba(16, 20, 38, 0.6);
   --bg-tertiary: rgba(25, 30, 56, 0.8);
+  --card-bg: #101426;
   --accent-primary: #6366f1; /* Indigo */
   --accent-secondary: #a855f7; /* Purple */
   --accent-teal: #14b8a6; /* Teal */
   --text-main: #f3f4f6;
+  --text-color: #f3f4f6;
   --text-muted: #9ca3af;
   --border-color: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(99, 102, 241, 0.5);
@@ -791,3 +793,15 @@ textarea.form-control {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
+
+/* ── Form Select Options Dark Mode Support ── */
+select option {
+  background-color: #161a30; /* Solid dark background matching --bg-secondary */
+  color: #f3f4f6; /* White text */
+}
+
+/* Ensure browser-specific styling does not override dropdown text visibility */
+select {
+  color-scheme: dark;
+}
+

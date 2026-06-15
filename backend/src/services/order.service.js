@@ -74,6 +74,22 @@ class OrderService {
   static async getUserOrders(userID) {
     return await OrderModel.getByUserId(userID);
   }
+
+  /**
+   * [ADMIN] Get all orders from all customers
+   */
+  static async getAllOrders() {
+    return await OrderModel.getAllOrders();
+  }
+
+  /**
+   * [ADMIN] Update the status of a given order
+   * @param {string} orderID
+   * @param {string} newStatus
+   */
+  static async updateOrderStatus(orderID, newStatus) {
+    return await OrderModel.updateStatus(orderID, newStatus);
+  }
 }
 
 module.exports = OrderService;

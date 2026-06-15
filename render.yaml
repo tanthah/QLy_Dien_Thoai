@@ -1,0 +1,36 @@
+services:
+  # ── BACKEND API ──────────────────────────────────────────
+  - type: web
+    name: phone-store-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        value: mysql-eba403a-student-90fb.h.aivencloud.com
+      - key: DB_PORT
+        value: "14873"
+      - key: DB_USER
+        value: avnadmin
+      - key: DB_PASSWORD
+        sync: false   # Nhập thủ công trên Render dashboard (bảo mật)
+      - key: DB_NAME
+        value: defaultdb
+
+  # ── FRONTEND (React + Vite) ───────────────────────────────
+  - type: web
+    name: phone-store-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://qly-dien-thoai-1.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
