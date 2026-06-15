@@ -1,0 +1,279 @@
+/* ── Container ───────────────────────────────────────────── */
+.admin-orders-container {
+  padding: 2rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.admin-orders-header {
+  margin-bottom: 2rem;
+}
+
+.admin-orders-header h2 {
+  font-size: 1.8rem;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+}
+
+.admin-orders-header p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* ── Stats row ───────────────────────────────────────────── */
+.orders-stats-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.orders-stat-card {
+  flex: 1 1 140px;
+  background: var(--card-bg);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-left: 4px solid var(--border-color);
+  transition: transform 0.18s;
+}
+
+.orders-stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.orders-stat-card.total  { border-left-color: #6366f1; }
+.orders-stat-card.pending    { border-left-color: #f59e0b; }
+.orders-stat-card.processing { border-left-color: #3b82f6; }
+.orders-stat-card.completed  { border-left-color: #22c55e; }
+.orders-stat-card.failed     { border-left-color: #ef4444; }
+.orders-stat-card.cancelled  { border-left-color: #9ca3af; }
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+.orders-table-container {
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow: auto;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.orders-table th,
+.orders-table td {
+  padding: 0.85rem 1.1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+.orders-table th {
+  background-color: var(--bg-color);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.orders-table tbody tr {
+  transition: background 0.15s;
+}
+
+.orders-table tbody tr:hover {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+/* ── Order-id cell ───────────────────────────────────────── */
+.order-id-cell {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* ── Customer info ───────────────────────────────────────── */
+.customer-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.customer-username {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Amount ──────────────────────────────────────────────── */
+.order-amount {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* ── Date ────────────────────────────────────────────────── */
+.order-date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ── Status badge ────────────────────────────────────────── */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.status-badge.pending    { background: #fef3c7; color: #92400e; }
+.status-badge.processing { background: #dbeafe; color: #1e40af; }
+.status-badge.completed  { background: #dcfce7; color: #15803d; }
+.status-badge.failed     { background: #fee2e2; color: #991b1b; }
+.status-badge.cancelled  { background: #f3f4f6; color: #4b5563; }
+
+/* ── Status select ───────────────────────────────────────── */
+.status-select {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 130px;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.status-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Items expand row ────────────────────────────────────── */
+.expand-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.expand-btn:hover {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.order-items-row td {
+  padding: 0;
+}
+
+.order-items-inner {
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+}
+
+.order-items-inner h4 {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.order-items-inner ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.order-items-inner li {
+  font-size: 0.88rem;
+  color: var(--text-color);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.item-qty {
+  font-weight: 600;
+  color: #6366f1;
+}
+
+/* ── Loading / empty ─────────────────────────────────────── */
+.orders-loading,
+.orders-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+}
+
+.orders-loading .spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border-color);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 0.75rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Toast inside page ───────────────────────────────────── */
+.orders-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  background: #22c55e;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: slideUp 0.25s ease;
+}
+
+.orders-toast.error {
+  background: #ef4444;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(1rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}

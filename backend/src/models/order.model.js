@@ -108,6 +108,60 @@ class OrderModel {
     );
     return result[0].total || 0;
   }
+
+  /**
+   * [ADMIN] Get all orders from all users, joined with user info
+   */
+  static async getAllOrders() {
+    const [orders] = await db.query(
+      `SELECT o.*, u.username, u.fullName, u.email
+       FROM \`Order\` o
+       LEFT JOIN User u ON o.userID = u.userID
+       ORDER BY o.orderDate DESC`
+    );
+
+    if (orders.length === 0) return [];
+
+    const orderIds = orders.map(o => o.orderID);
+    const [details] = await db.query(
+      `SELECT od.*, p.productName, p.brand
+       FROM OrderDetail od
+       JOIN Product p ON od.productID = p.productID
+       WHERE od.orderID IN (?)`,
+      [orderIds]
+    );
+
+    const detailsByOrderId = details.reduce((map, detail) => {
+      if (!map.has(detail.orderID)) map.set(detail.orderID, []);
+      map.get(detail.orderID).push(detail);
+      return map;
+    }, new Map());
+
+    return orders.map(order => ({
+      ...order,
+      items: detailsByOrderId.get(order.orderID) || []
+    }));
+  }
+
+  /**
+   * [ADMIN] Update the status of an order
+   * @param {string} orderID
+   * @param {string} newStatus - One of: PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED
+   */
+  static async updateStatus(orderID, newStatus) {
+    const validStatuses = ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED'];
+    if (!validStatuses.includes(newStatus)) {
+      throw new Error(`Trạng thái không hợp lệ: ${newStatus}`);
+    }
+    const [result] = await db.query(
+      'UPDATE `Order` SET orderStatus = ? WHERE orderID = ?',
+      [newStatus, orderID]
+    );
+    if (result.affectedRows === 0) {
+      throw new Error('Không tìm thấy đơn hàng');
+    }
+    return true;
+  }
 }
 
 module.exports = OrderModel;
